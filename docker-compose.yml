@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # https://geth.ethereum.org/docs/interface/private-network
+  # https://zenn.dev/hid3/articles/1e4f8cb58279c5
+  # https://www.edureka.co/blog/ethereum-private-network-tutorial
+  execution-setup:
+    # https://hub.docker.com/r/ethereum/client-go/
+    image: ethereum/client-go:v1.10.26
+    entrypoint: /bin/sh
+    tty: true
+    volumes:
+      - ./data/execution:/root/.ethereum/private
+
+  execution:
+    # https://hub.docker.com/r/ethereum/client-go/
+    image: ethereum/client-go:v1.10.26
+    container_name: execution
+    #entrypoint: /bin/sh
+    tty: true
+    volumes:
+      - ./data/execution:/root/.ethereum/private
+      #- ./secret/jwt.hex:/root/.ethereum/secret/jwt.hex
+    ports:
+      - "30303:30303/tcp"
+      - "30303:30303/udp"
+      - "30304:30304/tcp"
+      - "30304:30304/udp"
+      - "8545:8545"
+      - "8551:8551"
+    command:
+      - --networkid
+      - "88888"
+      - -http
+      - --http.api
+      - eth,net,engine,admin
+      - --authrpc.addr
+      - "0.0.0.0"
+      - --authrpc.port
+      - "8551"
+      - --authrpc.vhosts
+      - "*"
+      #- --authrpc.jwtsecret
+      #- /root/.ethereum/secret/jwt.hex
+      #- --override.terminaltotaldifficulty
+      #- "17000000000000000"
+      #- --bootnodes
+      #- enode://9246d00bc8fd1742e5ad2428b80fc4dc45d786283e05ef6edbd9002cbc335d40998444732fbe921cb88e1d2c73d1b1de53bae6a2237996e9bfe14f871baf7066@18.168.182.86:30303,enode://ec66ddcf1a974950bd4c782789a7e04f8aa7110a72569b6e65fcd51e937e74eed303b1ea734e4d19cfaec9fbff9b6ee65bf31dcb50ba79acce9dd63a6aca61c7@52.14.151.177:30303
+      #- --syncmode
+      #- snap
+      #- --nousb
+      #- --cache
+      #- "4096"
+
+  lodestar-localnet:
+    # https://hub.docker.com/r/chainsafe/lodestar
+    #image: 'chainsafe/lodestar:v1.2.1'
+    image: 'lodestar:dev'
+    platform: linux/arm64
+    container_name: lodestar-localnet
+    volumes:
+      - ./data/lodestar:/data
+    #  - ./secret/jwt.hex:/secret/jwt.hex
+    ports:
+      - "9000:9000" # P2P port
+      - "9596:9596" # REST API port
+    #stdin_open: true
+    #tty: true
+    command:
+      - dev
+      - --genesisValidators
+      - "2"
+      - --startValidators
+      - "0..1"
+      - --genesisTime
+      - "1578787200"
+      - --enr.ip
+      - 127.0.0.1
+      - --dataDir
+      - /data
+      - --reset
+
+  lodestar-localnet2:
+    # https://hub.docker.com/r/chainsafe/lodestar
+    image: 'chainsafe/lodestar:v1.2.1'
+    container_name: lodestar-localnet2
+    volumes:
+      - ./data/lodestar2:/data
+    #  - ./secret/jwt.hex:/secret/jwt.hex
+    ports:
+      - "9001:9001" # P2P port
+      - "9597:9597" # REST API port
+    #stdin_open: true
+    #tty: true
+    command:
+      - dev
+      - --genesisValidators
+      - "2"
+      - --genesisTime
+      - "1578787200"
+      - --port
+      - "9001"
+      - --rest.port
+      - "9597"
+      - --dataDir
+      - /data
+      - --network.connectToDiscv5Bootnodes
+      - "true"
+      - --reset
